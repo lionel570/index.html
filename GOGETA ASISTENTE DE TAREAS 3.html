@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gogeta IA</title>
+  <script src="https://unpkg.com/@google/generative-ai@0.1.3/dist/index.js"></script>
+  <style>
+    body { 
+      margin: 0; font-family: sans-serif; color: white; height: 100vh; display: flex; flex-direction: column; 
+      background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), 
+                  url('https://i.pinimg.com/originals/82/35/67/823567d264429e24626154109405625c.jpg');
+      background-size: cover; background-position: center;
+    }
+    .chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .message { padding: 12px 16px; border-radius: 18px; max-width: 85%; }
+    .ai { background: rgba(30,30,40,0.9); border-left: 4px solid #eab308; align-self: flex-start; }
+    .user { background: rgba(234, 179, 8, 0.8); color: black; align-self: flex-end; }
+    .input-area { padding: 15px; background: rgba(0,0,0,0.8); display: flex; gap: 8px; }
+    input { flex: 1; padding: 12px; border-radius: 20px; border: none; }
+    button { padding: 10px 15px; border-radius: 20px; border: none; background: #eab308; cursor: pointer; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="chat" id="chat"></div>
+<div class="input-area">
+  <input type="text" id="userInput" placeholder="Habla con Gogeta...">
+  <button onclick="enviarMensaje()">➤</button>
+  <button onclick="leerVoz()">🔊</button>
+</div>
+
+<script>
+  // PEGA TU API KEY AQUÍ ENTRE LAS COMILLAS
+  const API_KEY = "AIzaSyD_KQUG7gevCEVixleG5z8rDKdIGF6psFQ"; 
+  
+  const genAI = new GoogleGenerativeAI(API_KEY);
+  let ultimaRespuesta = "";
+
+  window.onload = () => {
+    document.getElementById('chat').innerHTML = localStorage.getItem('historialChat') || "";
+    document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+  };
+
+  async function enviarMensaje() {
+    const input = document.getElementById('userInput');
+    if (!input.value) return;
+
+    const chat = document.getElementById('chat');
+    chat.innerHTML += `<div class="message user">${input.value}</div>`;
+    
+    try {
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-pro",
+        generationConfig: {
+          systemInstruction: "Eres Gogeta, el guerrero definitivo. Responde de forma breve, contundente y poderosa. Sé directo como un guerrero en batalla.",
+          maxOutputTokens: 100
+        }
+      });
+
+      const result = await model.generateContent(input.value);
+      ultimaRespuesta = result.response.text();
+      
+      chat.innerHTML += `<div class="message ai">${ultimaRespuesta}</div>`;
+      localStorage.setItem('historialChat', chat.innerHTML);
+    } catch (e) {
+      chat.innerHTML += `<div class="message ai" style="color:red;">Error: Revisa tu API Key.</div>`;
+    }
+    
+    input.value = '';
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function leerVoz() {
+    if (ultimaRespuesta) {
+      const msg = new SpeechSynthesisUtterance(ultimaRespuesta);
+      msg.lang = 'es-ES';
+      window.speechSynthesis.speak(msg);
+    }
+  }
+</script>
+</body>
+</html>
